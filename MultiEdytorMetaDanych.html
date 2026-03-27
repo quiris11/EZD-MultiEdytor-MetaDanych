@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EZD — Edytor Meta Danych w Koszulce</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f12;
+    --surface: #13161b;
+    --surface2: #1a1e25;
+    --border: #262b34;
+    --border2: #323844;
+    --accent: #00d4ff;
+    --green: #00ff88;
+    --red: #ff4466;
+    --yellow: #ffd700;
+    --text: #e4e8f0;
+    --text2: #8899aa;
+    --text3: #556070;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.012) 2px,rgba(0,212,255,.012) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 15px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .badge {
+    background: var(--accent); color: #000;
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    padding: 3px 9px; letter-spacing: .08em;
+  }
+  .header-title { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+  .header-sub   { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+  .wrap {
+    max-width: 2000px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Card */
+  .card { background: var(--surface); border: 1px solid var(--border); }
+
+  .card-header {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .card-num {
+    font-family: var(--mono); font-size: 9px; color: var(--accent);
+    background: rgba(0,212,255,.08); border: 1px solid rgba(0,212,255,.2);
+    padding: 2px 7px; font-weight: 600;
+  }
+
+  .card-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+
+  .card-body { padding: 16px; }
+
+  .grid { display: grid; gap: 12px; }
+  .g2   { grid-template-columns: 1fr 1fr; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+
+  label {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    letter-spacing: .06em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  .src {
+    font-size: 9px; color: var(--accent); background: rgba(0,212,255,.07);
+    border: 1px solid rgba(0,212,255,.2); padding: 1px 5px;
+    border-radius: 2px; margin-left: auto; text-transform: none; font-weight: 400;
+  }
+
+  input[type=text],
+  input[type=password],
+  input[type=number] {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--mono); font-size: 12px;
+    padding: 9px 12px; outline: none; width: 100%;
+    border-radius: 0; appearance: none;
+    transition: border-color .15s, background .15s;
+  }
+
+  input[type=text]:focus,
+  input[type=number]:focus,
+  input[type=password]:focus {
+    border-color: var(--accent); background: rgba(0,212,255,.03);
+  }
+
+  input::placeholder { color: var(--text3); font-size: 11px; }
+
+  input:disabled {
+    opacity: .4; cursor: not-allowed; border-style: dashed;
+  }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  .btn {
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    padding: 12px 28px; border: none; cursor: pointer;
+    letter-spacing: .06em;
+    transition: background .15s, transform .1s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:active  { transform: scale(.99); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover:not(:disabled) { background: #33ddff; }
+
+  .status-row {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 11px;
+  }
+
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--border2); flex-shrink: 0;
+    transition: background .3s;
+  }
+  .status-dot.ok   { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.err  { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+  .status-dot.spin { background: var(--accent); animation: pulse 1s infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .status-msg         { color: var(--text3); }
+  .status-msg.ok      { color: var(--green); }
+  .status-msg.err     { color: var(--red); }
+  .status-msg.pending { color: var(--accent); }
+
+  .spinner {
+    display: inline-block; width: 11px; height: 11px;
+    border: 2px solid rgba(0,0,0,.3); border-top-color: #000;
+    border-radius: 50%; animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    font-family: var(--mono); font-size: 12px;
+    padding: 12px 28px; border: 1px solid;
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    z-index: 9998; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.ok  { background: rgba(0,255,136,.12); border-color: rgba(0,255,136,.4); color: var(--green); }
+  #toast.err { background: rgba(255,68,102,.12); border-color: rgba(255,68,102,.4); color: var(--red); }
+
+  /* ── Table ──────────────────────────────────────────────────────────────── */
+
+  .docs-count {
+    margin-left: auto;
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+  }
+
+  .tbl-wrap { overflow-x: auto; }
+
+  table.doc-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 1480px;
+  }
+
+  .doc-table th {
+    background: var(--surface2);
+    border-bottom: 2px solid var(--border2);
+    border-right: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 9px; color: var(--text3);
+    letter-spacing: .06em; text-transform: uppercase;
+    padding: 8px 10px;
+    text-align: left; white-space: nowrap;
+  }
+
+  .doc-table th .th-src {
+    display: block;
+    font-size: 8px; color: var(--accent);
+    opacity: .65; text-transform: none; letter-spacing: 0;
+    margin-top: 2px;
+  }
+
+  .doc-table td {
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    padding: 5px 6px;
+    vertical-align: middle;
+  }
+
+  .doc-table tbody tr:hover td { background: rgba(0,212,255,.015); }
+  .doc-table tbody tr:hover td.sticky-left  { background: #161a21; }
+  .doc-table tbody tr:hover td.sticky-right { background: #161a21; }
+
+  /* Sticky columns */
+  .sticky-left  {
+    position: sticky; left: 0; z-index: 2;
+    background: var(--surface);
+  }
+  .sticky-right {
+    position: sticky; right: 0; z-index: 2;
+    background: var(--surface);
+    box-shadow: -4px 0 10px rgba(0,0,0,.35);
+  }
+  th.sticky-left, th.sticky-right {
+    background: var(--surface2); z-index: 3;
+  }
+
+  .td-id {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--accent); white-space: nowrap;
+    min-width: 80px; padding: 5px 10px !important;
+  }
+
+  /* Compact inputs inside table */
+  .tbl-input,
+  .tbl-select,
+  .tbl-date {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono); font-size: 11px;
+    padding: 5px 7px;
+    width: 100%; outline: none;
+    border-radius: 0; appearance: none;
+    transition: border-color .12s;
+  }
+
+  .tbl-input:focus,
+  .tbl-select:focus,
+  .tbl-date:focus {
+    border-color: var(--accent); background: rgba(0,212,255,.03);
+  }
+
+  .tbl-input:disabled,
+  .tbl-select:disabled,
+  .tbl-date:disabled {
+    opacity: .3; cursor: not-allowed; border-style: dashed;
+  }
+
+  .tbl-input::placeholder { color: var(--text3); font-size: 10px; }
+
+  .tbl-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23556070'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center;
+    padding-right: 22px; cursor: pointer;
+  }
+  .tbl-select option { background: #1a1e25; }
+
+  .tbl-date::-webkit-calendar-picker-indicator {
+    filter: invert(.5) sepia(1) saturate(3) hue-rotate(160deg);
+    cursor: pointer; width: 12px;
+  }
+
+  /* Checkbox cells */
+  .td-cb { text-align: center; min-width: 74px; }
+  .tbl-cb {
+    width: 15px; height: 15px;
+    accent-color: var(--accent); cursor: pointer;
+  }
+  .tbl-cb:disabled { opacity: .3; cursor: not-allowed; }
+
+  /* Action column */
+  .td-action {
+    min-width: 155px;
+    padding: 7px 10px !important;
+  }
+
+  .row-action {
+    display: flex; flex-direction: column; gap: 5px;
+    align-items: flex-start;
+  }
+
+  .btn-upd {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    padding: 6px 13px; border: none; cursor: pointer;
+    letter-spacing: .05em;
+    background: var(--green); color: #000;
+    white-space: nowrap;
+    transition: background .15s, transform .1s;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .btn-upd:hover:not(:disabled) { background: #33ffaa; }
+  .btn-upd:active:not(:disabled) { transform: scale(.98); }
+  .btn-upd:disabled { opacity: .4; cursor: not-allowed; }
+
+  .row-status-line {
+    display: flex; align-items: center; gap: 5px;
+    min-height: 13px;
+  }
+
+  .row-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: transparent; flex-shrink: 0;
+    transition: background .3s;
+  }
+  .row-dot.ok   { background: var(--green); box-shadow: 0 0 4px var(--green); }
+  .row-dot.err  { background: var(--red);   box-shadow: 0 0 4px var(--red); }
+  .row-dot.spin { background: var(--accent); animation: pulse 1s infinite; }
+
+  .row-msg         { font-family: var(--mono); font-size: 9px; color: var(--text3); }
+  .row-msg.ok      { color: var(--green); }
+  .row-msg.err     { color: var(--red); }
+  .row-msg.pending { color: var(--accent); }
+
+  .row-spinner {
+    display: inline-block; width: 9px; height: 9px;
+    border: 1.5px solid rgba(0,0,0,.25); border-top-color: #000;
+    border-radius: 50%; animation: spin .6s linear infinite;
+  }
+
+  /* Empty state */
+  .tbl-empty {
+    padding: 48px; text-align: center;
+    font-family: var(--mono); font-size: 12px; color: var(--text3);
+  }
+
+  table tr > td:first-child + td {
+    min-width:300px 
+  }
+
+  table tr > td:first-child + td + td {
+    min-width:300px 
+  }
+
+  @media(max-width:600px) { .g2 { grid-template-columns: 1fr; } }
+
+</style>
+</head>
+<body>
+
+<header>
+  <span class="badge">EZD</span>
+  <span class="header-title">Edytor Meta Danych w Koszulce</span>
+  <span class="header-sub">KoszulkaListaDokumentow / PobierzMetadaneDokumentu / AktualizujDokument</span>
+</header>
+
+<div class="wrap">
+
+  <!-- 01 Konfiguracja -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num">01</span>
+      <span class="card-title">Konfiguracja połączenia</span>
+    </div>
+    <div class="card-body">
+      <div class="grid g2">
+        <div class="field">
+          <label>Host URL</label>
+          <input type="text" id="cfgHost" placeholder="https://api.example.com">
+        </div>
+        <div class="field">
+          <label>Token aplikacji</label>
+          <input type="password" id="cfgToken" placeholder="••••••••••••••••">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 Koszulka -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num">02</span>
+      <span class="card-title">Koszulka</span>
+    </div>
+    <div class="card-body">
+      <div class="grid g2" style="align-items:end">
+        <div class="field">
+          <label>IdKoszulki <span class="src">long</span></label>
+          <input type="number" id="idKoszulki" placeholder="np. 12345" oninput="onKoszulkaChange()">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnPobierz" onclick="pobierzListe()">
+            ↓ POBIERZ LISTĘ
+          </button>
+          <div class="status-row">
+            <div class="status-dot" id="dotPobierz"></div>
+            <span class="status-msg" id="msgPobierz">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 Dokumenty -->
+  <div class="card" id="cardDokumenty" style="display:none">
+    <div class="card-header">
+      <span class="card-num">03</span>
+      <span class="card-title">Dokumenty</span>
+      <span class="docs-count" id="docsCount"></span>
+    </div>
+    <div class="tbl-wrap" id="tblWrap">
+      <div class="tbl-empty">Brak danych</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+async function sha256upper(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('').toUpperCase();
+}
+
+async function generujHeaders() {
+  const token = document.getElementById('cfgToken').value.trim();
+  const param = uuidv4();
+  const now   = new Date();
+  const pad   = n => String(n).padStart(2, '0');
+  const ezdDt = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}`;
+  const hash  = await sha256upper(`${param}${token}${ezdDt}`);
+  return {
+    'Accept':                 'application/json',
+    'Content-Type':           'application/json',
+    'ezdapi-authtoken-param': param,
+    'ezdapi-authtoken':       hash,
+  };
+}
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+
+function parseEzdDate(val) {
+  if (!val) return '';
+  const m = val.match(/\/Date\((-?\d+)[+-]\d+\)\//);
+  if (!m) return '';
+  const ts = parseInt(m[1]);
+  if (ts < 0) return '';
+  const d   = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+function stripExt(nazwa) {
+  if (!nazwa) return '';
+  const dot = nazwa.lastIndexOf('.');
+  return dot > 0 ? nazwa.slice(0, dot) : nazwa;
+}
+
+// ── Walidacja ─────────────────────────────────────────────────────────────────
+
+function validate(requireKoszulka = true) {
+  if (!document.getElementById('cfgHost').value.trim())  { toast('Uzupełnij Host URL', 'err');  return false; }
+  if (!document.getElementById('cfgToken').value.trim()) { toast('Uzupełnij Token', 'err');     return false; }
+  if (requireKoszulka && !document.getElementById('idKoszulki').value.trim()) {
+    toast('Podaj IdKoszulki', 'err'); return false;
+  }
+  return true;
+}
+
+// ── Stan ──────────────────────────────────────────────────────────────────────
+
+function onKoszulkaChange() {
+  document.getElementById('cardDokumenty').style.display = 'none';
+  document.getElementById('tblWrap').innerHTML = '<div class="tbl-empty">Brak danych</div>';
+  document.getElementById('docsCount').textContent = '';
+  const dot = document.getElementById('dotPobierz');
+  const txt = document.getElementById('msgPobierz');
+  dot.className = 'status-dot';
+  txt.className = 'status-msg';
+  txt.textContent = '—';
+}
+
+function setMainStatus(type, msg) {
+  const dot = document.getElementById('dotPobierz');
+  const txt = document.getElementById('msgPobierz');
+  dot.className = 'status-dot ' + (type === 'spin' ? 'spin' : type);
+  txt.className = 'status-msg ' + (type === 'spin' ? 'pending' : type);
+  txt.textContent = msg;
+}
+
+// ── POBIERZ LISTĘ ─────────────────────────────────────────────────────────────
+
+async function pobierzListe() {
+  if (!validate()) return;
+
+  const host = document.getElementById('cfgHost').value.trim();
+  const idK  = parseInt(document.getElementById('idKoszulki').value);
+  const btn  = document.getElementById('btnPobierz');
+
+  setMainStatus('spin', 'Pobieranie listy...');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> POBIERANIE...';
+
+  try {
+    const headers = await generujHeaders();
+    const res = await fetch(`${host}/koszulka/ListaDokumentow`, {
+      method:  'POST',
+      headers,
+      body:    JSON.stringify({ IdKoszulki: idK }),
+    });
+
+    let data;
+    try { data = await res.json(); }
+    catch { throw new Error(`HTTP ${res.status} — nie mozna sparsowac odpowiedzi`); }
+
+    const lista = data.ListaDokumentow ?? data['ListaDokumentow'] ?? [];
+    if (!res.ok && lista.length === 0) {
+      throw new Error(data.ResultMessage || `HTTP ${res.status}`);
+    }
+
+    // Każdy element listy ma pole ID = identyfikator dokumentu
+    // oraz IdPisma = identyfikator pisma (inne pojęcie — nie używać jako klucza dokumentu)
+    const docs = lista
+      .map(d => ({ id: d.ID, idPisma: d.IdPisma }))
+      .filter(d => d.id != null && d.id !== 0);
+
+    if (docs.length === 0) {
+      setMainStatus('ok', 'Lista pusta (0 dokumentów)');
+      toast('Koszulka nie zawiera dokumentów', 'ok');
+      return;
+    }
+
+    const ids = docs.map(d => d.id);
+
+    renderTable(ids);
+    document.getElementById('cardDokumenty').style.display = '';
+    document.getElementById('docsCount').textContent = `${ids.length} dokumentów`;
+    setMainStatus('ok', `Lista pobrana — ładowanie metadanych (${ids.length})...`);
+    toast(`Lista pobrana — ${ids.length} dokumentów`, 'ok');
+
+    // Równolegle pobierz metadane każdego dokumentu
+    ids.forEach(id => fetchDocMeta(id));
+
+  } catch (e) {
+    setMainStatus('err', e.message.slice(0, 100));
+    toast('Błąd: ' + e.message.slice(0, 80), 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '↓ POBIERZ LISTĘ';
+  }
+}
+
+// ── RENDER TABLE ──────────────────────────────────────────────────────────────
+
+const DOSTEP_OPTS  = ['', 'Niepubliczny', 'Publiczny'];
+const METATYP_OPTS = ['', 'Text', 'Dataset', 'Collection', 'MovingImage',
+                      'PhysicalObject', 'Software', 'Sound', 'StillImage'];
+
+function fid(id, field) { return `f_${id}_${field}`; }
+
+function renderTable(ids) {
+  const cols = [
+    { key: 'Nazwa',            label: 'Nazwa',            src: '← Nazwa',              type: 'text',   w: 155 },
+    { key: 'Tytul',            label: 'Tytul',            src: '← Nazwa (bez rozsz.)', type: 'text',   w: 155 },
+    { key: 'Sygnatura',        label: 'Sygnatura',        src: '← ZnakWidniejacy',     type: 'text',   w: 135 },
+    { key: 'Rodzaj',           label: 'Rodzaj',           src: '← RodzajDokumentu',    type: 'text',   w: 110 },
+    { key: 'DataDokumentu',    label: 'DataDokumentu',    src: '← DataWidniejaca',     type: 'date',   w: 145 },
+    { key: 'Dostep',           label: 'Dostep',           src: '← Dostep',             type: 'select', opts: DOSTEP_OPTS,  w: 130 },
+    { key: 'MetaTyp',          label: 'MetaTyp',          src: '← TypDokumentu',       type: 'select', opts: METATYP_OPTS, w: 135 },
+    { key: 'MetadaneZapisane', label: 'MetadaneZapisane', src: '← MetadaneZapisane',   type: 'cb',     w: 74  },
+    { key: 'MetaBrakZnaku',    label: 'MetaBrakZnaku',    src: '← BrakZnakuNaPismie',  type: 'cb',     w: 74  },
+    { key: 'MetaBrakDaty',     label: 'MetaBrakDaty',     src: '← BrakDatyNaPismie',   type: 'cb',     w: 74  },
+  ];
+
+  let h = '<table class="doc-table"><thead><tr>';
+  h += `<th class="sticky-left" style="min-width:80px">ID</th>`;
+  cols.forEach(c => {
+    h += `<th style="min-width:${c.w}px">${c.label}<span class="th-src">${c.src}</span></th>`;
+  });
+  h += `<th class="sticky-right" style="min-width:155px">Akcja</th>`;
+  h += '</tr></thead><tbody>';
+
+  ids.forEach(id => {
+    h += `<tr id="row_${id}">`;
+    h += `<td class="td-id sticky-left">${id}</td>`;
+
+    cols.forEach(c => {
+      if (c.type === 'cb') {
+        h += `<td class="td-cb"><input type="checkbox" class="tbl-cb" id="${fid(id, c.key)}" disabled></td>`;
+      } else if (c.type === 'select') {
+        const opts = c.opts.map(o =>
+          `<option value="${o}">${o || '— wybierz —'}</option>`
+        ).join('');
+        h += `<td><select class="tbl-select" id="${fid(id, c.key)}" style="min-width:${c.w - 14}px" disabled>${opts}</select></td>`;
+      } else if (c.type === 'date') {
+        h += `<td><input type="date" class="tbl-date tbl-input" id="${fid(id, c.key)}" disabled></td>`;
+      } else {
+        h += `<td><input type="text" class="tbl-input" id="${fid(id, c.key)}" placeholder="—" disabled style="min-width:${c.w - 14}px"></td>`;
+      }
+    });
+
+    h += `
+      <td class="td-action sticky-right">
+        <div class="row-action">
+          <button class="btn-upd" id="btn_${id}" onclick="aktualizujJeden(${id})" disabled>✓ AKTUALIZUJ</button>
+          <div class="row-status-line">
+            <div class="row-dot spin" id="dot_${id}"></div>
+            <span class="row-msg pending" id="msg_${id}">Pobieranie...</span>
+          </div>
+        </div>
+      </td>
+    `;
+    h += '</tr>';
+  });
+
+  h += '</tbody></table>';
+  document.getElementById('tblWrap').innerHTML = h;
+}
+
+// ── POBIERZ METADANE (per row) ────────────────────────────────────────────────
+
+const EDITABLE_FIELDS = [
+  'Nazwa','Tytul','Sygnatura','Rodzaj','DataDokumentu',
+  'Dostep','MetaTyp','MetadaneZapisane','MetaBrakZnaku','MetaBrakDaty'
+];
+
+async function fetchDocMeta(id) {
+  const host = document.getElementById('cfgHost').value.trim();
+  try {
+    const headers = await generujHeaders();
+    const res = await fetch(`${host}/Dokument/PobierzMetadaneDokumentu`, {
+      method:  'POST',
+      headers,
+      body:    JSON.stringify({ Identyfikator: id, PobierzPodpisy: false }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    fillRow(id, data);
+    setRowStatus(id, 'ok', '');
+    enableRow(id);
+
+  } catch (e) {
+    setRowStatus(id, 'err', e.message.slice(0, 55));
+  }
+}
+
+function fillRow(id, d) {
+  const set = (field, val) => {
+    const el = document.getElementById(fid(id, field));
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!val;
+    else el.value = (val != null) ? val : '';
+  };
+
+  set('Nazwa',            d.Nazwa            ?? '');
+  set('Tytul',            stripExt(d.Nazwa   ?? ''));
+  set('Sygnatura',        d.ZnakWidniejacy   ?? '');
+  set('Rodzaj',           d.RodzajDokumentu  ?? '');
+  set('DataDokumentu',    parseEzdDate(d.DataWidniejaca));
+  set('Dostep',           d.Dostep           ?? '');
+  set('MetaTyp',          d.TypDokumentu     ?? '');
+  set('MetadaneZapisane', d.MetadaneZapisane);
+  set('MetaBrakZnaku',    d.BrakZnakuNaPismie);
+  set('MetaBrakDaty',     d.BrakDatyNaPismie);
+}
+
+function enableRow(id) {
+  EDITABLE_FIELDS.forEach(field => {
+    const el = document.getElementById(fid(id, field));
+    if (el) el.disabled = false;
+  });
+  const btn = document.getElementById(`btn_${id}`);
+  if (btn) btn.disabled = false;
+}
+
+function setRowStatus(id, type, msg) {
+  const dot = document.getElementById(`dot_${id}`);
+  const txt = document.getElementById(`msg_${id}`);
+  if (!dot || !txt) return;
+  dot.className = 'row-dot ' + (type === 'spin' ? 'spin' : type);
+  txt.className = 'row-msg '  + (type === 'spin' ? 'pending' : type);
+  txt.textContent = msg;
+}
+
+// ── AKTUALIZUJ (per row) ──────────────────────────────────────────────────────
+
+async function aktualizujJeden(id) {
+  if (!validate(false)) return;
+
+  const host = document.getElementById('cfgHost').value.trim();
+  const btn  = document.getElementById(`btn_${id}`);
+
+  setRowStatus(id, 'spin', 'Wysyłanie...');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="row-spinner"></span> WYSYŁANIE...';
+
+  const gv = field => document.getElementById(fid(id, field))?.value?.trim() || undefined;
+  const gc = field => document.getElementById(fid(id, field))?.checked;
+
+  const payload = {
+    Dokument: {
+      Identyfikator:    { Identyfikator: id },
+      Nazwa:            gv('Nazwa'),
+      Tytul:            gv('Tytul'),
+      Sygnatura:        gv('Sygnatura'),
+      DataDokumentu:    gv('DataDokumentu'),
+      Rodzaj:           gv('Rodzaj'),
+      Dostep:           gv('Dostep'),
+      MetaTyp:          gv('MetaTyp'),
+      MetaBrakZnaku:    gc('MetaBrakZnaku'),
+      MetaBrakDaty:     gc('MetaBrakDaty'),
+      MetadaneZapisane: gc('MetadaneZapisane'),
+    },
+    CID: 0,
+    IdPracownikaWlasciciela: 0,
+    IdStanowiskaWlasciciela: 0,
+  };
+
+  try {
+    const headers = await generujHeaders();
+    const res = await fetch(`${host}/Api3/AktualizujDokument`, {
+      method:  'POST',
+      headers,
+      body:    JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || (data.ResultStatus != null && data.ResultStatus !== 0)) {
+      throw new Error(data.ResultMessage || `HTTP ${res.status}`);
+    }
+
+    setRowStatus(id, 'ok', 'Zaktualizowano');
+    toast(`✓ Dokument ${id} zaktualizowany pomyślnie`, 'ok');
+
+  } catch (e) {
+    setRowStatus(id, 'err', e.message.slice(0, 55));
+    toast(`Błąd (${id}): ${e.message.slice(0, 70)}`, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✓ AKTUALIZUJ';
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+let _toastTimer;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `show ${type}`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = ''; }, 3600);
+}
+
+</script>
+</body>
+</html>
