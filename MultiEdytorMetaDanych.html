@@ -605,7 +605,7 @@ function renderTable(ids) {
     { key: 'DataDokumentu',    label: 'DataDokumentu',    src: '← DataWidniejaca',     type: 'date',   w: 145 },
     { key: 'Dostep',           label: 'Dostep',           src: '← Dostep',             type: 'select', opts: DOSTEP_OPTS,  w: 130 },
     { key: 'MetaTyp',          label: 'MetaTyp',          src: '← TypDokumentu',       type: 'select', opts: METATYP_OPTS, w: 135 },
-    { key: 'MetadaneZapisane', label: 'MetadaneZapisane', src: '← MetadaneZapisane',   type: 'cb',     w: 74  },
+    { key: 'Metadane',         label: 'Metadane',         src: '← MetadaneZapisane',   type: 'cb',     w: 74  },
     { key: 'MetaBrakZnaku',    label: 'MetaBrakZnaku',    src: '← BrakZnakuNaPismie',  type: 'cb',     w: 74  },
     { key: 'MetaBrakDaty',     label: 'MetaBrakDaty',     src: '← BrakDatyNaPismie',   type: 'cb',     w: 74  },
   ];
@@ -659,7 +659,7 @@ function renderTable(ids) {
 
 const EDITABLE_FIELDS = [
   'Nazwa','Tytul','Sygnatura','Rodzaj','DataDokumentu',
-  'Dostep','MetaTyp','MetadaneZapisane','MetaBrakZnaku','MetaBrakDaty'
+  'Dostep','MetaTyp','Metadane','MetaBrakZnaku','MetaBrakDaty'
 ];
 
 async function fetchDocMeta(id) {
@@ -701,7 +701,7 @@ function fillRow(id, d) {
   set('DataDokumentu',    parseEzdDate(d.DataWidniejaca));
   set('Dostep',           d.Dostep           ?? '');
   set('MetaTyp',          d.TypDokumentu     ?? '');
-  set('MetadaneZapisane', d.MetadaneZapisane);
+  set('Metadane',         d.MetadaneZapisane);
   set('MetaBrakZnaku',    d.BrakZnakuNaPismie);
   set('MetaBrakDaty',     d.BrakDatyNaPismie);
 }
@@ -751,7 +751,7 @@ async function aktualizujJeden(id) {
       MetaTyp:          gv('MetaTyp'),
       MetaBrakZnaku:    gc('MetaBrakZnaku'),
       MetaBrakDaty:     gc('MetaBrakDaty'),
-      MetadaneZapisane: gc('MetadaneZapisane'),
+      Metadane:         gc('Metadane'),
     },
     CID: 0,
     IdPracownikaWlasciciela: 0,
